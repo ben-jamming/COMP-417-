@@ -16,6 +16,7 @@ import seaborn as sns
 
 # Base engine from the following link
 # https://github.com/the-lagrangian/inverted-pendulum
+#See report for reward function source
 
 class DiscreteInvertedPendulum(object):
     def __init__(self, args, windowdims, cartdims, penddims, action_range=[-1, 1]):
@@ -68,9 +69,23 @@ class DiscreteInvertedPendulum(object):
 
     def get_reward(self, discrete_theta):
         #small survival reward + angle reward
-        return 0.01 + 9 * (self.theta_threshold_radians -
+        current_angle = self.from_discrete(discrete_theta, self.args.theta_discrete_steps,
+                                                        range=[-math.pi/2, math.pi/2])
+        print("theta:")
+        print(current_angle)
+        new_reward = 0
+        if current_angle >= -0.1 and current_angle <= 0.1:
+            new_reward = 1
+        else:
+            new_reward = 0
+
+        if np.abs(current_angle - self.theta_threshold_radians) < 0.001:
+            new_reward = 5
+        return new_reward
+
+        """return 0.00001 + 0.99999 * (self.theta_threshold_radians -
                               np.abs(self.from_discrete(discrete_theta, self.args.theta_discrete_steps,
-                                                        range=[-math.pi/2, math.pi/2])))/self.theta_threshold_radians
+                                                        range=[-math.pi/2, math.pi/2])))/self.theta_threshold_radians"""
 
     def to_discrete(self, value, steps, range):
         value = np.clip(value, range[0], range[1])         #Threshold it
@@ -277,7 +292,7 @@ class InvertedPendulumGame(object):
             else:
                 action = self.RL_controller.get_action(self.pendulum.get_discrete_values(), self.surface_array,
                                                         random_controller=self.random_controller, episode=self.game_round_number)
-                '''for event in pygame.event.get():
+                for event in pygame.event.get():
                     if event.type == QUIT:
                         pygame.quit()
                         sys.exit()
@@ -285,7 +300,7 @@ class InvertedPendulumGame(object):
                         if event.key == K_ESCAPE:
                             print("Exiting ... ")
                             pygame.quit()
-                            sys.exit()'''
+                            sys.exit()
 
             if self.noisy_actions and self.RL_controller is None:
                 action = action + np.random.uniform(-0.1, 0.1)
@@ -308,7 +323,7 @@ class InvertedPendulumGame(object):
 
         self.game_round_number += 1
 
-        if(self.game_round_number%100 == 0):
+        if(self.game_round_number%20 == 0) or self.game_round_number==3000:
             plt.plot(np.arange(len(theta_diff_list)), theta_diff_list)
             plt.xlabel('Time')
             plt.ylabel('|Theta(radians)|')
@@ -377,7 +392,7 @@ def get_args():
     parser.add_argument('--theta_dot_discrete_steps', type=int, default=40)
 
     parser.add_argument('--gamma', type=float, default=0.99)
-    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--lr', type=float, default=0.05)
 
     args = parser.parse_args()
     return args
