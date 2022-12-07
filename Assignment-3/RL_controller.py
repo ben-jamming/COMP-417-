@@ -32,9 +32,11 @@ class RL_controller:
             else:
                 action = np.argmax(self.Q_value[theta][theta_dot])
 
+        return 0.5
 
 
-        if not(self.prev_s is None or self.prev_s == [theta, theta_dot]):
+
+        """if not(self.prev_s is None or self.prev_s == [theta, theta_dot]):
             # Calculate Q values here
             #alpha = 0
             #self.Q_value[theta]
@@ -47,9 +49,9 @@ class RL_controller:
 
         self.prev_s = [theta, theta_dot]
         self.prev_a = action
-        return action
+        return action"""
 
-    def save_state_matrix(self,round):
+    """def save_state_matrix(self,round):
         data_set = self.V_values
         plt.figure(figsize=(20, 20))
         ax = sns.heatmap( data_set , cmap = 'coolwarm',robust=True, annot=True,linewidth=.1,fmt=".01f" )
@@ -57,6 +59,6 @@ class RL_controller:
         plt.ylabel('ThetaDot')
         plt.title( "2-D Heat Map" )
         plt.savefig("State_Values_" +str(round) +".png")
-        plt.close()  
+        plt.close()"""  
 
 
