@@ -133,7 +133,7 @@ class InvertedPendulumGame(object):
         self.manual_action_magnitude = manual_action_magnitude
         self.random_controller = random_controller
         self.noisy_actions = noisy_actions
-
+        #lists
         self.score_list = []
         self.theta_estimates = []
         self.theta_actuals = []
@@ -166,7 +166,7 @@ class InvertedPendulumGame(object):
     def draw_cart(self, x, theta):
         cart = pygame.Rect(self.pendulum.x * self.pendulum.x_conversion + self.pendulum.window_width/2 - self.cart_width // 2, self.Y_CART, self.cart_width, self.car_height)
         pygame.draw.rect(self.surface, self.BLUE, cart)
-        pendulum_array = np.dot(self.rotation_matrix(theta), self.static_pendulum_array)
+        pendulum_array = np.dot(self.rotation_matrix(-theta), self.static_pendulum_array)
         pendulum_array += np.array([[x * self.pendulum.x_conversion + self.pendulum.window_width/2], [self.Y_CART]])
         pendulum = pygame.draw.polygon(self.surface, self.RED,
                                        ((pendulum_array[0, 0], pendulum_array[1, 0]),
@@ -204,40 +204,52 @@ class InvertedPendulumGame(object):
                          fontsize=30)
         pygame.display.update()
 
-    def get_game_data(self,theta_diff_list):
-        data = {
-            "step": np.arange(len(self.theta_actuals)),
-            "true thetas": self.theta_actuals,
-            "theta estimates": self.theta_estimates,
+    def get_game_data(self, code):
+        if code == 0:
+        #compare theta vs estimate
+            data = {
+                "step": np.arange(len(self.theta_actuals)),
+                "true thetas": self.theta_actuals,
+                "theta estimates": self.theta_estimates,
 
-        }
-        df = pd.DataFrame(data)
-        #df["difference"] = df["true thetas"] - df["theta estimates"]
-        #df["difference"] = df["difference"].abs()
+            }
+            df = pd.DataFrame(data)
+            #df["difference"] = df["true thetas"] - df["theta estimates"]
+            #df["difference"] = df["difference"].abs()
 
-        ax = df.plot.line(x="step", 
-        title="variance of theta estimates",)
+            ax = df.plot.line(x="step", 
+            title="variance of theta estimates",)
 
-        ax.plot()
-        #plt.errorbar(x=df["step"],y=df["theta estimates"], yerr=3, color = "red")
-        plt.xlabel('Time')
-        plt.ylabel('Estimated Theta')
-        plt.title("Theta: True v.s. Estimated")
-        plt.grid()
-        plt.savefig("theta_estimates_vs_true.png")
-        plt.close()
+            ax.plot()
+            #plt.errorbar(x=df["step"],y=df["theta estimates"], yerr=3, color = "red")
+            plt.xlabel('Time')
+            plt.ylabel('Estimated Theta')
+            plt.title("Theta: True v.s. Estimated")
+            plt.grid()
+            plt.savefig("theta_estimates_vs_true.png")
+            plt.close()
+        if code == 1:
+            #save theta over time
+            plt.plot(np.arange(len(self.theta_actuals)), self.theta_actuals)
+            plt.xlabel('Time')
+            plt.ylabel('Theta(radians)')
+            plt.title("Theta vs Time")
+            plt.grid()
+            plt.savefig(self.performance_figure_path + "_run_" + str(len(self.score_list)) + ".png")
+            plt.close()
 
     
     def getFilteredAction(self):
         #use the KF output values which were calculated during the previous timestep as PID input
         action = self.PID_controller.get_action(self.KalmanFilter.X_pred.item(0), \
             self.KalmanFilter.X_pred.item(1))
+        self.theta_estimates.append(self.KalmanFilter.X_pred.item(0))
         #1: get theta from image, and theta_dot as the diff between current and previous theta
         theta_observed, theta_dot_observed = self.PID_controller.get_angle(self.pendulum.timestep, \
             self.surface_array, random_controller=self.random_controller)
         #set theta_dot and theta to be these observed values
         self.KalmanFilter.set_values(theta_observed,theta_dot_observed)
-        self.theta_estimates.append(self.KalmanFilter.X_pred.item(0))
+        print("Theta estimate is: ",self.KalmanFilter.X_pred.item(0))
         #update the kalman filter with the newly obtained action
         self.KalmanFilter.update(action)
         return action
@@ -246,6 +258,10 @@ class InvertedPendulumGame(object):
         
         theta_observed, theta_dot_observed = self.PID_controller.get_angle(self.pendulum.timestep, \
             self.surface_array, random_controller=self.random_controller)
+
+        _,_,_,_,theta_observed,theta_dot_observed = self.pendulum.get_state()
+        #theta_dot_observed = self.pendulum.theta_dot
+        #theta_observed = self.pendulum.theta
         self.theta_estimates.append(theta_observed)
         print("Current angle is: {a} \n Change in angle is {b}".format(a=theta_observed,b=theta_dot_observed))
         action = self.PID_controller.get_action(theta_observed,theta_dot_observed)
@@ -255,7 +271,7 @@ class InvertedPendulumGame(object):
         self.pendulum.reset_state()
         self.reset_filter()
 
-        theta_diff_list = []
+        
 
         action = 0
         self.KalmanFilter.update(action)
@@ -287,7 +303,7 @@ class InvertedPendulumGame(object):
 
                 #print("Action: ",action)
 
-                for event in pygame.event.get():
+                """for event in pygame.event.get():
                     if event.type == QUIT:
                         pygame.quit()
                         sys.exit()
@@ -295,7 +311,7 @@ class InvertedPendulumGame(object):
                         if event.key == K_ESCAPE:
                             print("Exiting ... ")
                             pygame.quit()
-                            sys.exit()
+                            sys.exit()"""
 
 
             if self.noisy_actions and PID_controller_object is None:
@@ -307,10 +323,6 @@ class InvertedPendulumGame(object):
 
 
             terminal, timestep, x, _, theta, _ = self.pendulum.step(action)
-            theta_diff_list.append(np.abs(theta))
-            
-
-            #theta_dot_estimate = self.KalmanFilter.X_pred.index(1)
             
             self.theta_actuals.append(theta)            
 
@@ -331,25 +343,10 @@ class InvertedPendulumGame(object):
 
         
         self.score_list.append(self.pendulum.score)
-        self.get_game_data(theta_diff_list)
-        """plt.plot(np.arange(len(theta_diff_list)), theta_diff_list)
-        plt.xlabel('Time')
-        plt.ylabel('Theta(radians)')
-        plt.title("Theta vs Time")
-        plt.grid()
-        plt.savefig(self.performance_figure_path + "_run_" + str(len(self.score_list)) + ".png")
-        plt.close()"""
-        """
-        Calculate MSE and Variance
-        """
+        self.get_game_data(1)
+        
         self.score_list.append(1)
-        if len(self.score_list) == 20:
-            mse = mean_squared_error(self.theta_actuals,self.theta_estimates)
-            print("========================ATTENTION===================")
-            print("The Variance in the difference between", np.var(self.PID_controller.theta_errors))
-            print("The MSE after 20 rounds is",mse)
-            print("=====================================================")
-            sys.exit()
+        sys.exit()
         #self.end_of_round()
 
 
@@ -398,7 +395,7 @@ def get_args():
     parser.add_argument('--mode', type=str, default="manual")
     parser.add_argument('--random_controller', type=bool, default=False)
     parser.add_argument('--add_noise_to_gravity_and_mass', type=bool, default=False)
-    parser.add_argument('--max_timestep', type=int, default=1000)
+    parser.add_argument('--max_timestep', type=int, default=2000)
 
     parser.add_argument('--gravity', type=float, default=9.81)
     parser.add_argument('--manual_action_magnitude', type=float, default=1)
