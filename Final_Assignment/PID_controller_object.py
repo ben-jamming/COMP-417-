@@ -11,17 +11,16 @@ class KalmanFilter:
         self.x_curr = 0  #theta @t
         self.X_pred = np.matrix([[self.x_curr],[self.dx_curr]])
         self.X_curr = np.matrix([[self.x_curr],[self.dx_curr]])
-        self.A = np.matrix([[1,self.dx_curr],[(9.81/self.dt)*0.5,1]])
-        self.B = np.matrix([[0],[(self.dt)]])
+        self.A = np.matrix([[1,self.dt],[(9.81*self.dt)/0.5,1]])
+        self.B = np.matrix([[0],[3*self.dt/0.5]])
         #self.Q = np.matrix([[(0.25*self.dt**4),0.5*(self.dt**3)],[0.5*(self.dt**3), self.dt**2]])
-        self.Q = np.eye(2)*500
+        self.Q = np.eye(2)*0.3
         self.G = np.eye(2)
-        self.alpha = 0.3 # adjusting scalar for P
-        self.beta = 0.3 #adjustment scalar for R
-        self.P = np.eye(2)*self.alpha
+        self.alpha = 0.00000025 # adjusting scalar for P
+        self.beta = 0.0000000000000003 #adjustment scalar for R
         self.P_pred = np.eye(2)*self.alpha
         self.R = np.eye(2)*self.beta
-        self.H = np.eye(2)
+        self.H = np.eye(2)*0.3
 
     def set_values(self,theta,theta_dot):
         self.X_curr = np.matrix([[theta],[theta_dot]])

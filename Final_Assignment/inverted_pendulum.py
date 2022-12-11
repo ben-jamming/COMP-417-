@@ -1,5 +1,6 @@
 
 from email import message
+from turtle import title
 import pygame, sys
 import numpy as np
 from pygame.locals import *
@@ -137,7 +138,10 @@ class InvertedPendulumGame(object):
         self.score_list = []
         self.theta_estimates = []
         self.theta_actuals = []
-        self.mse_list = []
+        self.theta_observations = []
+        self.theta_cov_errors = []
+        self.theta_dot_cov_errors = []
+
         self.Y_CART = self.pendulum.Y_CART
         self.df = pd.DataFrame()
         # self.time gives time in frames
@@ -173,6 +177,7 @@ class InvertedPendulumGame(object):
                                         (pendulum_array[0, 1], pendulum_array[1, 1]),
                                         (pendulum_array[0, 2], pendulum_array[1, 2]),
                                         (pendulum_array[0, 3], pendulum_array[1, 3])))
+    
 
     @staticmethod
     def rotation_matrix(theta):
@@ -204,49 +209,121 @@ class InvertedPendulumGame(object):
                          fontsize=30)
         pygame.display.update()
 
-    def get_game_data(self, code):
-        if code == 0:
-        #compare theta vs estimate
-            data = {
-                "step": np.arange(len(self.theta_actuals)),
-                "true thetas": self.theta_actuals,
-                "theta estimates": self.theta_estimates,
+    def get_game_data(self,option):
 
-            }
-            df = pd.DataFrame(data)
-            #df["difference"] = df["true thetas"] - df["theta estimates"]
-            #df["difference"] = df["difference"].abs()
+            if option == 0:
+            
+                data = {
+                    "step": np.arange(len(self.theta_actuals)),
+                    "true thetas": self.theta_actuals,
+                    "theta estimates": self.theta_estimates,
 
-            ax = df.plot.line(x="step", 
-            title="variance of theta estimates",)
+                }
+                df = pd.DataFrame(data)
+                #df["difference"] = df["true thetas"] - df["theta estimates"]
+                #df["difference"] = df["difference"].abs()
+                ax = df.plot.line(x="step", 
+                title="variance of theta estimates")
+                #theta estimates vs theta actuals over time
+                ax.plot()
+                plt.xlabel('Time')
+                plt.ylabel('Estimated Theta')
+                plt.title("Theta: True v.s. Estimated")
+                plt.grid()
+                plt.savefig("theta_estimates_vs_true_over_time.png")
+                plt.close()
 
-            ax.plot()
-            #plt.errorbar(x=df["step"],y=df["theta estimates"], yerr=3, color = "red")
-            plt.xlabel('Time')
-            plt.ylabel('Estimated Theta')
-            plt.title("Theta: True v.s. Estimated")
-            plt.grid()
-            plt.savefig("theta_estimates_vs_true.png")
-            plt.close()
-        if code == 1:
-            #save theta over time
-            plt.plot(np.arange(len(self.theta_actuals)), self.theta_actuals)
-            plt.xlabel('Time')
-            plt.ylabel('Theta(radians)')
-            plt.title("Theta vs Time")
-            plt.grid()
-            plt.savefig(self.performance_figure_path + "_run_" + str(len(self.score_list)) + ".png")
-            plt.close()
+                #save theta over time
+                plt.plot(np.arange(len(self.theta_actuals)), self.theta_actuals)
+                plt.xlabel('Time')
+                plt.ylabel('Theta(radians)')
+                plt.title("Theta vs Time")
+                plt.grid()
+                plt.savefig(self.performance_figure_path + "_run_" + str(len(self.score_list)) + ".png")
+                plt.close()
+                #covariance matrix between estimated and actual
+                cov_df = df[["true thetas", "theta estimates"]].cov()
+                f = plt.figure(figsize=(19, 15))
+                plt.matshow(cov_df,fignum=f.number)
+                plt.xticks(range(cov_df.shape[1]), cov_df.columns, fontsize=14, rotation=45)
+                plt.yticks(range(cov_df.shape[1]), cov_df.columns, fontsize=14)
+                cb = plt.colorbar()
+                cb.ax.tick_params(labelsize=14)
+                plt.title("Covariance of estimated and actual values (theta)")
+                plt.grid()
+                plt.savefig("covariance_estimated_and_actual.png")
+                plt.close()
+                
+                
+                #compare observed theta vs actual
+                df.rename(columns={"theta estimates": "theta observations"}, inplace=True)
+                df["theta observations"] = self.theta_observations
+                ax = df.plot.line(x="step", 
+                title="theta actual vs theta observed over time")
+                ax.plot()
+                plt.xlabel('Time')
+                plt.ylabel('Estimated Theta')
+                plt.grid()
+                plt.savefig("theta_observations_vs_variance_over_time.png")
+                plt.close()
+
+                #estimation error variance over time
+                data = {
+                    "step": np.arange(len(self.theta_cov_errors)),
+                    "theta covariance": self.theta_cov_errors,
+                    "theta dot covariance": self.theta_dot_cov_errors
+                }
+                df = pd.DataFrame(data)
+                ax = df.plot.line(
+                    x = "step", title = "Covaraince Errors of Theta dot and Theta over time"
+                )
+                plt.xlabel('Time')
+                plt.ylabel('Variance')
+                plt.grid()
+                plt.savefig("Thet_vs_theta_dot_covariance_errors_over_time.png")
+                plt.close()
+
+            elif option == 2:
+                plt.plot(np.arange(len(self.theta_actuals)), self.theta_actuals)
+                plt.xlabel('Time')
+                plt.ylabel('Theta(radians)')
+                plt.title("Theta vs Time")
+                plt.grid()
+                plt.savefig(self.performance_figure_path + "_run_" + str(len(self.score_list)) + ".png")
+                plt.close()                
+
+            else:
+                data = {
+                    "step": np.arange(len(self.theta_actuals)),
+                    "true thetas": self.theta_actuals,
+                    "theta observations": self.theta_observations,
+
+                }
+                df =pd.DataFrame(data)
+                ax = df.plot.line(x="step", 
+                title="theta actual vs theta observed over time")
+                ax.plot()
+                plt.xlabel('Time')
+                plt.ylabel('Estimated Theta')
+                plt.grid()
+                plt.savefig("theta_observations_vs_variance_over_time.png")
+                plt.close()
+
+
+            
+
 
     
     def getFilteredAction(self):
         #use the KF output values which were calculated during the previous timestep as PID input
-        action = self.PID_controller.get_action(self.KalmanFilter.X_pred.item(0), \
-            self.KalmanFilter.X_pred.item(1))
+        action = self.PID_controller.get_action(self.KalmanFilter.X_pred.item(0),self.KalmanFilter.X_pred.item(1))
         self.theta_estimates.append(self.KalmanFilter.X_pred.item(0))
         #1: get theta from image, and theta_dot as the diff between current and previous theta
         theta_observed, theta_dot_observed = self.PID_controller.get_angle(self.pendulum.timestep, \
             self.surface_array, random_controller=self.random_controller)
+        self.theta_observations.append(theta_observed)
+        self.theta_cov_errors.append(self.KalmanFilter.P_pred.item(0))
+        self.theta_dot_cov_errors.append(self.KalmanFilter.P_pred.item(3))
         #set theta_dot and theta to be these observed values
         self.KalmanFilter.set_values(theta_observed,theta_dot_observed)
         print("Theta estimate is: ",self.KalmanFilter.X_pred.item(0))
@@ -255,16 +332,17 @@ class InvertedPendulumGame(object):
         return action
     
     def getUnfilteredAction(self):
-        
+
+        #self.theta_estimates.append(self.KalmanFilter.X_pred.item(0))
         theta_observed, theta_dot_observed = self.PID_controller.get_angle(self.pendulum.timestep, \
             self.surface_array, random_controller=self.random_controller)
+        self.theta_observations.append(theta_observed)
 
-        _,_,_,_,theta_observed,theta_dot_observed = self.pendulum.get_state()
-        #theta_dot_observed = self.pendulum.theta_dot
-        #theta_observed = self.pendulum.theta
-        self.theta_estimates.append(theta_observed)
+        #self.KalmanFilter.set_values(theta_observed,theta_dot_observed)
+        
         print("Current angle is: {a} \n Change in angle is {b}".format(a=theta_observed,b=theta_dot_observed))
         action = self.PID_controller.get_action(theta_observed,theta_dot_observed)
+        self.KalmanFilter.update(action)
         return action
 
     def game_round(self):
@@ -298,12 +376,13 @@ class InvertedPendulumGame(object):
                             sys.exit()
             
             else:
-                
-                action = self.getUnfilteredAction()
+                #_,_,_,_,theta,theta_dot = self.pendulum.get_state()
+                #action = self.PID_controller.get_action(theta,theta_dot)
+                action = self.getFilteredAction()
 
                 #print("Action: ",action)
 
-                """for event in pygame.event.get():
+                for event in pygame.event.get():
                     if event.type == QUIT:
                         pygame.quit()
                         sys.exit()
@@ -311,7 +390,7 @@ class InvertedPendulumGame(object):
                         if event.key == K_ESCAPE:
                             print("Exiting ... ")
                             pygame.quit()
-                            sys.exit()"""
+                            sys.exit()
 
 
             if self.noisy_actions and PID_controller_object is None:
@@ -321,7 +400,7 @@ class InvertedPendulumGame(object):
             #if np.random.rand() > 0.99:
             #   action = 50
 
-
+            
             terminal, timestep, x, _, theta, _ = self.pendulum.step(action)
             
             self.theta_actuals.append(theta)            
@@ -343,7 +422,8 @@ class InvertedPendulumGame(object):
 
         
         self.score_list.append(self.pendulum.score)
-        self.get_game_data(1)
+        #change this depending on what data you're trying to get or you'll get errors 
+        self.get_game_data(0)
         
         self.score_list.append(1)
         sys.exit()

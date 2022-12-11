@@ -8,12 +8,12 @@ import cv2
 import math
 from PIL import Image
   
-def centeroid(points: np.array) -> np.array:
-    length, dim = points.shape
-    return np.array([int(np.sum(points[:, i])/length) for i in range(dim)])
-
 def calculate_angle(theta):
-    #print("RAW ANGLE IS: ",theta)
+    #print("RAW ANGLE IS: ",theta
+    # )
+    if theta == 0:
+        return 0.0
+
     if theta > 45:
         #tilting left
         #print("TILTING LEFT @ {d} or {r} radians".format(d=(theta-90), r = (theta*(math.pi/180))-(math.pi/2)))
@@ -46,5 +46,5 @@ def find_pole(im):
         """
         Uncomment to show the pole detection live
         """
-        #cv2.imshow("result",img_res)
+        cv2.imshow("result",img_res)
         return calculate_angle(rect[2])
