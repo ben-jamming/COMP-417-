@@ -12,7 +12,8 @@ Use tools from the OpenCV library to identify the pole and calculate the angle b
 
 # Results: 
 Here's a video of the simulation running.
-![alt text](https://drive.google.com/file/d/1mG1vOfe_MUsUBLFtzYooBxZO5K3qt7U3/view?usp=share_link)
+
+https://user-images.githubusercontent.com/53016294/214457401-cc6a68ee-cdb8-4546-a1e9-1cfdb74541ca.mov
     
 # Part 1) Visual Tracking
 
@@ -27,15 +28,14 @@ quadrant the pole is in (ie, negative if it’s leaning left, positive if it’s
 results of the object detection live, un-comment line 45 in cart_pole_angle_detector.py._
 
 Results
-![alt text](https://drive.google.com/file/d/1bov-jit8NnrjjB5Rqyn2SyBqHspPqiAj/view?usp=share_link?raw=true)
-
+<img width="602" alt="Screen Shot 2023-01-24 at 7 58 14 PM" src="https://user-images.githubusercontent.com/53016294/214457207-5794bc34-d7da-42c1-917b-68943b722ecb.png">
 
 # Part 2 ) Kalman Filter
 
 Using the following equations, I was able to obtain highly-optimal results with a Kalman filter.
 These equations are implemented in PID_Controller.py, with a custom KalmanFilter class.
 
-![alt text](https://drive.google.com/file/d/19jtaiw2K5FNxObOQsfd7Zo6UzLU0Ej_x/view?usp=share_link?raw=true)
+<img width="372" alt="Screen Shot 2023-01-24 at 7 58 22 PM" src="https://user-images.githubusercontent.com/53016294/214457240-1c187a93-4d7f-4721-b0d9-b4cb5ca6c87f.png">
 
 I found that setting the values of my Q and R matrices such that Q > R, was the most effective
 tuning mechanism. As shown in Figure b), the estimated values of theta were accurate to within
@@ -44,11 +44,8 @@ demonstrate that there’s a strong covariance between the estimated values of t
 values of theta, as well as between the estimated values of theta and theta dot. Overall, using the
 filter yielded much more stable results.
 
-Results
-
-![alt text](https://drive.google.com/file/d/1oDVocr8-N74Od326a0B_F8qPDU5Dl-ps/view?usp=share_link?raw=true)
-
-![alt text](https://drive.google.com/file/d/1hBU9sLSZ8x7H6YqYDOvXq0ZiUmB0JATt/view?usp=share_link?raw=true)
+<img width="799" alt="Screen Shot 2023-01-24 at 7 58 30 PM" src="https://user-images.githubusercontent.com/53016294/214457268-a07ba9cf-0902-4a96-9601-1d83010c483d.png">
+<img width="806" alt="Screen Shot 2023-01-24 at 7 58 36 PM" src="https://user-images.githubusercontent.com/53016294/214457282-ee1cb3b5-9f34-47bb-b10d-477857872a39.png">
 
 # Part 3) PID Controller
 
@@ -56,7 +53,7 @@ As the results in a) show, using the internal state values of theta and theta do
 obtain a highly-stable pole. To tweak the gains I used the Ziegler-Nichols method to tune my
 PID. Theta dot was calculated using the time delta of 0.005, as is used in the game.
 
-![alt text](https://drive.google.com/file/d/1RiJgnYfvUhfZ1I4dMGC_9b7b_p3eYSo8/view?usp=share_link?raw=true)
+<img width="541" alt="Screen Shot 2023-01-24 at 7 58 43 PM" src="https://user-images.githubusercontent.com/53016294/214457355-0b50db93-7b60-4759-91ed-312a08981c37.png">
 
 
 
