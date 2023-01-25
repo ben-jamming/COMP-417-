@@ -15,55 +15,50 @@ class RL_controller:
         self.prev_s = None # Previous state
 
     def reset(self):
-        #You need to reset sth
-        print("TBD")
+        
+        pass
 
     def get_action(self, state, image_state, random_controller=False, episode=0):
 
         terminal, timestep, theta, theta_dot, reward = state
 
         if random_controller:
+
             action = np.random.randint(0, 3) # you have three possible actions (0,1,2)
 
         else:
-            if np.random.rand() > 0.8:
+            if np.random.uniform(0,1) > 0.8: 
                 action = np.random.randint(0, 3)                
             else:
                 action = np.argmax(self.Q_value[theta][theta_dot])
 
+        return 0.5
 
 
-        if not(self.prev_s is None or self.prev_s == [theta, theta_dot]):
+
+        """if not(self.prev_s is None or self.prev_s == [theta, theta_dot]):
             # Calculate Q values here
             #alpha = 0
             #self.Q_value[theta]
 
             
             self.Q_value[self.prev_s[0]][self.prev_s[1]][self.prev_a] = self.Q_value[self.prev_s[0]][self.prev_s[1]][self.prev_a] \
-                 + self.lr * (reward + self.gamma * np.max(self.Q_value[theta][theta_dot]))
+                 + self.lr * (reward + self.gamma * (np.max(self.Q_value[theta][theta_dot])-self.Q_value[self.prev_s[0]][self.prev_s[1]][self.prev_a]))
 
             self.V_values[self.prev_s[0]][self.prev_s[1]] = self.Q_value[theta][theta_dot][action]
-            print(reward)
-                
 
-            #new_theta = 
-            #new_theta_dot = 
-
-            #self.Q_value = self.Q_value + alpha*(reward + self.gamma*np.argmax((self.prev_a,self.prev_s)-(self.Q_value)))
-
-        #############################################################
-        #    
         self.prev_s = [theta, theta_dot]
         self.prev_a = action
-        return action
+        return action"""
 
-    def save_state_matrix(self,round):
+    """def save_state_matrix(self,round):
         data_set = self.V_values
-        ax = sns.heatmap( data_set , cmap = 'coolwarm',robust=True, annot=True,fmt=".1f" )
+        plt.figure(figsize=(20, 20))
+        ax = sns.heatmap( data_set , cmap = 'coolwarm',robust=True, annot=True,linewidth=.1,fmt=".01f" )
         plt.xlabel('Theta')
         plt.ylabel('ThetaDot')
         plt.title( "2-D Heat Map" )
         plt.savefig("State_Values_" +str(round) +".png")
-        plt.close()  
+        plt.close()"""  
 
 
